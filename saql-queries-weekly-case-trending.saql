@@ -1,0 +1,325 @@
+-- ===============================================================
+-- SALESFORCE CRM ANALYTICS - WEEKLY CASE TRENDING SAQL QUERIES
+-- ===============================================================
+
+-- Query 1: Basic Weekly Case Count Trending
+-- Purpose: Shows total cases created per week
+q1 = load "Case_Dataset";
+q1 = filter q1 by 'CreatedDate_Year' >= 2023;
+q1 = group q1 by ('CreatedDate_Year', 'CreatedDate_Week');
+q1 = foreach q1 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek',
+    date('CreatedDate_Year' + "-01-01") + (('CreatedDate_Week' - 1) * 7) as 'WeekStartDate';
+q1 = order q1 by ('Year' asc, 'Week' asc);
+
+-- Query 2: Weekly Case Trending with Status Breakdown
+-- Purpose: Shows case counts by status per week
+q2 = load "Case_Dataset";
+q2 = filter q2 by 'CreatedDate_Year' >= 2023;
+q2 = group q2 by ('CreatedDate_Year', 'CreatedDate_Week', 'Status');
+q2 = foreach q2 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    'Status',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+q2 = order q2 by ('Year' asc, 'Week' asc, 'Status' asc);
+
+-- Query 3: Weekly Case Trending with Priority Analysis
+-- Purpose: Shows case distribution by priority per week
+q3 = load "Case_Dataset";
+q3 = filter q3 by 'CreatedDate_Year' >= 2023;
+q3 = group q3 by ('CreatedDate_Year', 'CreatedDate_Week', 'Priority');
+q3 = foreach q3 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    'Priority',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+q3 = order q3 by ('Year' asc, 'Week' asc, 'Priority' asc);
+
+-- Query 4: Current Week vs Previous Week Comparison
+-- Purpose: Shows week-over-week comparison
+currentWeek = load "Case_Dataset";
+currentWeek = filter currentWeek by 'CreatedDate_Week' == date_part("week", now()) 
+    and 'CreatedDate_Year' == date_part("year", now());
+currentWeekCount = group currentWeek by all;
+currentWeekCount = foreach currentWeekCount generate 
+    count() as 'CurrentWeekCases',
+    "Current Week" as 'Period';
+
+previousWeek = load "Case_Dataset";
+previousWeek = filter previousWeek by 'CreatedDate_Week' == (date_part("week", now()) - 1) 
+    and 'CreatedDate_Year' == date_part("year", now());
+previousWeekCount = group previousWeek by all;
+previousWeekCount = foreach previousWeekCount generate 
+    count() as 'PreviousWeekCases',
+    "Previous Week" as 'Period';
+
+-- Query 5: Moving Average Calculation (4-week)
+-- Purpose: Smooths out weekly fluctuations with moving average
+q5 = load "Case_Dataset";
+q5 = filter q5 by 'CreatedDate_Year' >= 2023;
+q5 = group q5 by ('CreatedDate_Year', 'CreatedDate_Week');
+q5 = foreach q5 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+q5 = order q5 by ('Year' asc, 'Week' asc);
+q5 = foreach q5 generate 
+    'Year',
+    'Week',
+    'CaseCount',
+    'YearWeek',
+    avg('CaseCount') over (order by ('Year', 'Week') rows between 3 preceding and current row) as 'MovingAvg4Week';
+
+-- Query 6: Year-over-Year Comparison
+-- Purpose: Compares current year weekly trends with previous year
+currentYearData = load "Case_Dataset";
+currentYearData = filter currentYearData by 'CreatedDate_Year' == date_part("year", now());
+currentYearData = group currentYearData by 'CreatedDate_Week';
+currentYearData = foreach currentYearData generate 
+    'CreatedDate_Week' as 'Week',
+    count() as 'CurrentYearCases';
+
+previousYearData = load "Case_Dataset";
+previousYearData = filter previousYearData by 'CreatedDate_Year' == (date_part("year", now()) - 1);
+previousYearData = group previousYearData by 'CreatedDate_Week';
+previousYearData = foreach previousYearData generate 
+    'CreatedDate_Week' as 'Week',
+    count() as 'PreviousYearCases';
+
+yoyComparison = cogroup currentYearData by 'Week', previousYearData by 'Week';
+yoyComparison = foreach yoyComparison generate 
+    'Week',
+    sum(currentYearData.'CurrentYearCases') as 'CurrentYear',
+    sum(previousYearData.'PreviousYearCases') as 'PreviousYear',
+    (sum(currentYearData.'CurrentYearCases') - sum(previousYearData.'PreviousYearCases')) as 'YoYChange',
+    case 
+        when sum(previousYearData.'PreviousYearCases') > 0 
+        then ((sum(currentYearData.'CurrentYearCases') - sum(previousYearData.'PreviousYearCases')) / sum(previousYearData.'PreviousYearCases')) * 100
+        else 0
+    end as 'YoYChangePercent';
+
+-- Query 7: Weekly Case Trending by Origin
+-- Purpose: Shows case volume trends by origin channel
+q7 = load "Case_Dataset";
+q7 = filter q7 by 'CreatedDate_Year' >= 2023;
+q7 = group q7 by ('CreatedDate_Year', 'CreatedDate_Week', 'Origin');
+q7 = foreach q7 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    'Origin',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+q7 = order q7 by ('Year' asc, 'Week' asc, 'Origin' asc);
+
+-- Query 8: Top Case Owners by Week
+-- Purpose: Identifies top case owners each week
+q8 = load "Case_Dataset";
+q8 = filter q8 by 'CreatedDate_Year' >= 2023;
+q8 = group q8 by ('CreatedDate_Year', 'CreatedDate_Week', 'Owner.Name');
+q8 = foreach q8 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    'Owner.Name' as 'OwnerName',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+q8 = order q8 by ('Year' desc, 'Week' desc, 'CaseCount' desc);
+
+-- Query 9: Weekly Case Resolution Rate
+-- Purpose: Shows percentage of cases resolved each week
+casesCreated = load "Case_Dataset";
+casesCreated = filter casesCreated by 'CreatedDate_Year' >= 2023;
+casesCreated = group casesCreated by ('CreatedDate_Year', 'CreatedDate_Week');
+casesCreated = foreach casesCreated generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CasesCreated';
+
+casesResolved = load "Case_Dataset";
+casesResolved = filter casesResolved by 'CreatedDate_Year' >= 2023 and 'Status' in ["Closed", "Resolved"];
+casesResolved = group casesResolved by ('CreatedDate_Year', 'CreatedDate_Week');
+casesResolved = foreach casesResolved generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CasesResolved';
+
+resolutionRate = cogroup casesCreated by ('Year', 'Week'), casesResolved by ('Year', 'Week');
+resolutionRate = foreach resolutionRate generate 
+    'Year',
+    'Week',
+    sum(casesCreated.'CasesCreated') as 'Created',
+    sum(casesResolved.'CasesResolved') as 'Resolved',
+    case 
+        when sum(casesCreated.'CasesCreated') > 0 
+        then (sum(casesResolved.'CasesResolved') / sum(casesCreated.'CasesCreated')) * 100
+        else 0
+    end as 'ResolutionRatePercent';
+
+-- Query 10: Weekly Case Aging Analysis
+-- Purpose: Shows average case age by week
+q10 = load "Case_Dataset";
+q10 = filter q10 by 'CreatedDate_Year' >= 2023;
+q10 = foreach q10 generate 
+    'CreatedDate_Year',
+    'CreatedDate_Week',
+    'Id',
+    case 
+        when 'Status' in ["Closed", "Resolved"] 
+        then date_diff("day", 'CreatedDate', 'ClosedDate')
+        else date_diff("day", 'CreatedDate', now())
+    end as 'CaseAge';
+q10 = group q10 by ('CreatedDate_Year', 'CreatedDate_Week');
+q10 = foreach q10 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    avg('CaseAge') as 'AvgCaseAge',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+
+-- Query 11: Weekly Case Trending with Filters (Template)
+-- Purpose: Flexible query with multiple filter options
+filteredCases = load "Case_Dataset";
+
+-- Apply date filter
+filteredCases = filter filteredCases by 'CreatedDate_Year' >= {{cell(StartYear).asNumber()}};
+filteredCases = filter filteredCases by 'CreatedDate_Year' <= {{cell(EndYear).asNumber()}};
+
+-- Apply optional status filter
+filteredCases = case 
+    when "{{cell(StatusFilter).asString()}}" != "All"
+    then filter filteredCases by 'Status' == "{{cell(StatusFilter).asString()}}"
+    else filteredCases
+end;
+
+-- Apply optional priority filter
+filteredCases = case 
+    when "{{cell(PriorityFilter).asString()}}" != "All"
+    then filter filteredCases by 'Priority' == "{{cell(PriorityFilter).asString()}}"
+    else filteredCases
+end;
+
+-- Apply optional origin filter
+filteredCases = case 
+    when "{{cell(OriginFilter).asString()}}" != "All"
+    then filter filteredCases by 'Origin' == "{{cell(OriginFilter).asString()}}"
+    else filteredCases
+end;
+
+-- Group and aggregate
+filteredCases = group filteredCases by ('CreatedDate_Year', 'CreatedDate_Week');
+filteredCases = foreach filteredCases generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount',
+    'CreatedDate_Year' + "-W" + 'CreatedDate_Week' as 'YearWeek';
+filteredCases = order filteredCases by ('Year' asc, 'Week' asc);
+
+-- Query 12: Weekly Case Volume Forecast (Simple Linear Trend)
+-- Purpose: Provides basic trend-based forecast
+historicalData = load "Case_Dataset";
+historicalData = filter historicalData by 'CreatedDate_Year' >= 2023;
+historicalData = group historicalData by ('CreatedDate_Year', 'CreatedDate_Week');
+historicalData = foreach historicalData generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount',
+    ('CreatedDate_Year' - 2023) * 52 + 'CreatedDate_Week' as 'WeekNumber';
+
+-- Calculate trend (simplified - use advanced analytics for better forecasting)
+trendData = group historicalData by all;
+trendData = foreach trendData generate 
+    avg('CaseCount') as 'AvgCases',
+    count() as 'WeekCount';
+
+-- Query 13: Weekly Case Heatmap Data
+-- Purpose: Provides data for heatmap visualization (Week vs Day of Week)
+q13 = load "Case_Dataset";
+q13 = filter q13 by 'CreatedDate_Year' >= 2023;
+q13 = foreach q13 generate 
+    'CreatedDate_Year',
+    'CreatedDate_Week',
+    date_part("dow", 'CreatedDate') as 'DayOfWeek',
+    'Id';
+q13 = group q13 by ('CreatedDate_Year', 'CreatedDate_Week', 'DayOfWeek');
+q13 = foreach q13 generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    'DayOfWeek',
+    count() as 'CaseCount',
+    case 'DayOfWeek'
+        when 1 then "Sunday"
+        when 2 then "Monday"
+        when 3 then "Tuesday"
+        when 4 then "Wednesday"
+        when 5 then "Thursday"
+        when 6 then "Friday"
+        when 7 then "Saturday"
+    end as 'DayName';
+
+-- Query 14: Weekly Case Volume Percentiles
+-- Purpose: Shows distribution percentiles for case volumes
+weeklyVolumes = load "Case_Dataset";
+weeklyVolumes = filter weeklyVolumes by 'CreatedDate_Year' >= 2023;
+weeklyVolumes = group weeklyVolumes by ('CreatedDate_Year', 'CreatedDate_Week');
+weeklyVolumes = foreach weeklyVolumes generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount';
+
+percentileData = group weeklyVolumes by all;
+percentileData = foreach percentileData generate 
+    percentile('CaseCount', 0.25) as 'P25',
+    percentile('CaseCount', 0.5) as 'P50_Median',
+    percentile('CaseCount', 0.75) as 'P75',
+    percentile('CaseCount', 0.9) as 'P90',
+    avg('CaseCount') as 'Average',
+    min('CaseCount') as 'Minimum',
+    max('CaseCount') as 'Maximum';
+
+-- Query 15: Weekly Case Trending with Anomaly Detection
+-- Purpose: Identifies weeks with unusual case volumes
+baselineData = load "Case_Dataset";
+baselineData = filter baselineData by 'CreatedDate_Year' >= 2023;
+baselineData = group baselineData by ('CreatedDate_Year', 'CreatedDate_Week');
+baselineData = foreach baselineData generate 
+    'CreatedDate_Year' as 'Year',
+    'CreatedDate_Week' as 'Week',
+    count() as 'CaseCount';
+
+-- Calculate statistics for anomaly detection
+statsData = group baselineData by all;
+statsData = foreach statsData generate 
+    avg('CaseCount') as 'MeanCases',
+    stddev('CaseCount') as 'StdDevCases';
+
+-- Flag anomalies (cases outside 2 standard deviations)
+anomalyData = cogroup baselineData by all, statsData by all;
+anomalyData = foreach anomalyData generate 
+    flatten(baselineData),
+    flatten(statsData);
+anomalyData = foreach anomalyData generate 
+    'Year',
+    'Week',
+    'CaseCount',
+    'MeanCases',
+    'StdDevCases',
+    case 
+        when 'CaseCount' > ('MeanCases' + 2 * 'StdDevCases') then "High Anomaly"
+        when 'CaseCount' < ('MeanCases' - 2 * 'StdDevCases') then "Low Anomaly"
+        else "Normal"
+    end as 'AnomalyFlag';
+
+-- ===============================================================
+-- USAGE NOTES:
+-- 1. Replace "Case_Dataset" with your actual dataset name
+-- 2. Adjust date filters based on your data range
+-- 3. Modify field names to match your dataset schema
+-- 4. Use {{cell(VariableName).asType()}} for dashboard filters
+-- 5. Test queries in Analytics Studio before using in dashboards
+-- ===============================================================
