@@ -237,22 +237,22 @@ comparison = foreach comparison generate
 
 #### 6.1 Recommended Layout Structure
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Dashboard Header                          │
-│                 Weekly Case Trending Report                  │
-├─────────────┬─────────────┬─────────────┬─────────────────┤
-│ Total Cases │ Avg Weekly  │ WoW Change  │ Peak Week       │
-│ This Week   │ Cases       │ %           │ Volume          │
-├─────────────┴─────────────┴─────────────┴─────────────────┤
-│                                                             │
-│              Main Trending Line Chart                       │
-│                    (Full Width)                             │
-│                                                             │
-├─────────────┬─────────────┬─────────────┬─────────────────┤
-│ Cases by    │ Cases by    │ Cases by    │ Top 10 Case     │
-│ Status      │ Priority    │ Origin      │ Owners          │
-│ (Donut)     │ (Bar)       │ (H-Bar)     │ (Table)         │
-└─────────────┴─────────────┴─────────────┴─────────────────┘
++-------------------------------------------------------------+
+|                    Dashboard Header                         |
+|                 Weekly Case Trending Report                 |
++-------------+-------------+-------------+-----------------+
+| Total Cases | Avg Weekly  | WoW Change  | Peak Week       |
+| This Week   | Cases       | %           | Volume          |
++-------------+-------------+-------------+-----------------+
+|                                                             |
+|              Main Trending Line Chart                       |
+|                    (Full Width)                             |
+|                                                             |
++-------------+-------------+-------------+-----------------+
+| Cases by    | Cases by    | Cases by    | Top 10 Case     |
+| Status      | Priority    | Origin      | Owners          |
+| (Donut)     | (Bar)       | (H-Bar)     | (Table)         |
++-------------+-------------+-------------+-----------------+
 ```
 
 #### 6.2 Color Scheme and Styling
