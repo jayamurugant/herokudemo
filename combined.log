@@ -1,0 +1,15 @@
+{"assuresignBaseUrl":"https://api.assuresign.net","environment":"development","hasCredentials":false,"level":"info","message":"AssureSign SOAP Passthrough server running on port 3001","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:22:31.986Z"}
+{"ip":"::1","level":"info","message":"GET /health","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:22:41.197Z","userAgent":"curl/8.12.1"}
+{"level":"info","message":"SIGTERM received, shutting down gracefully","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:22:41.879Z"}
+{"assuresignBaseUrl":"https://api.assuresign.net","environment":"development","hasCredentials":false,"level":"info","message":"AssureSign SOAP Passthrough server running on port 3001","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:22:57.587Z"}
+{"ip":"::1","level":"info","message":"GET /health","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:09.050Z","userAgent":"curl/8.12.1"}
+{"contentType":"text/xml; charset=utf-8","ip":"::1","level":"info","message":"POST /soap/assuresign","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:15.298Z","userAgent":"curl/8.12.1"}
+{"contentLength":"316","level":"info","message":"SOAP request received","service":"assuresign-soap-passthrough","soapAction":"\"http://tempuri.org/IDocumentService/GetDocumentStatus\"","timestamp":"2025-10-26T06:23:15.299Z"}
+{"level":"error","message":"AssureSign credentials not configured","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:15.299Z"}
+{"contentType":"text/xml; charset=utf-8","ip":"::1","level":"info","message":"POST /soap/assuresign","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:27.012Z","userAgent":"curl/8.12.1"}
+{"level":"info","message":"SOAP request received","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:27.013Z"}
+{"level":"error","message":"AssureSign credentials not configured","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:27.013Z"}
+{"contentType":"text/xml; charset=utf-8","ip":"::1","level":"info","message":"POST /soap/assuresign","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:31.726Z","userAgent":"curl/8.12.1"}
+{"level":"info","message":"SOAP request received","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:31.727Z"}
+{"level":"error","message":"AssureSign credentials not configured","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:23:31.727Z"}
+{"level":"info","message":"SIGTERM received, shutting down gracefully","service":"assuresign-soap-passthrough","timestamp":"2025-10-26T06:24:02.345Z"}
