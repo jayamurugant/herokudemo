@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssureSign SOAP Passthrough Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-healthy { background-color: #28a745; }
+        .status-unhealthy { background-color: #dc3545; }
+        .status-unknown { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AssureSign SOAP Passthrough Test</h1>
+        
+        <div class="form-group">
+            <label>Service Status:</label>
+            <div id="status">
+                <span class="status-indicator status-unknown"></span>
+                <span id="status-text">Checking...</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="soapAction">SOAP Action:</label>
+            <input type="text" id="soapAction" placeholder="http://tempuri.org/IDocumentService/SubmitDocument" />
+        </div>
+
+        <div class="form-group">
+            <label for="soapBody">SOAP Request Body:</label>
+            <textarea id="soapBody" placeholder="Enter your SOAP XML request here...">
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+  <soap:Header/>
+  <soap:Body>
+    <tem:GetDocumentStatus>
+      <tem:request>
+        <tem:DocumentID>your-document-id</tem:DocumentID>
+      </tem:request>
+    </tem:GetDocumentStatus>
+  </soap:Body>
+</soap:Envelope>
+            </textarea>
+        </div>
+
+        <button onclick="sendSoapRequest()">Send SOAP Request</button>
+        <button onclick="checkHealth()">Check Health</button>
+        <button onclick="clearResponse()">Clear Response</button>
+
+        <div id="response" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Check health status on page load
+        window.onload = function() {
+            checkHealth();
+        };
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.getElementById('status-text');
+                
+                if (response.ok) {
+                    statusIndicator.className = 'status-indicator status-healthy';
+                    statusText.textContent = `Healthy - ${data.timestamp}`;
+                } else {
+                    statusIndicator.className = 'status-indicator status-unhealthy';
+                    statusText.textContent = 'Unhealthy';
+                }
+            } catch (error) {
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.getElementById('status-text');
+                statusIndicator.className = 'status-indicator status-unhealthy';
+                statusText.textContent = 'Connection Error';
+            }
+        }
+
+        async function sendSoapRequest() {
+            const soapAction = document.getElementById('soapAction').value;
+            const soapBody = document.getElementById('soapBody').value;
+            const responseDiv = document.getElementById('response');
+
+            if (!soapBody.trim()) {
+                showResponse('Please enter a SOAP request body', 'error');
+                return;
+            }
+
+            try {
+                showResponse('Sending request...', 'info');
+
+                const headers = {
+                    'Content-Type': 'text/xml; charset=utf-8'
+                };
+
+                if (soapAction) {
+                    headers['SOAPAction'] = soapAction;
+                }
+
+                const response = await fetch('/soap/assuresign', {
+                    method: 'POST',
+                    headers: headers,
+                    body: soapBody
+                });
+
+                const responseText = await response.text();
+                const statusClass = response.ok ? 'success' : 'error';
+                
+                showResponse(
+                    `Status: ${response.status} ${response.statusText}\n` +
+                    `Content-Type: ${response.headers.get('Content-Type')}\n\n` +
+                    responseText,
+                    statusClass
+                );
+
+            } catch (error) {
+                showResponse(`Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showResponse(text, type) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = text;
+            responseDiv.className = `response ${type}`;
+            responseDiv.style.display = 'block';
+        }
+
+        function clearResponse() {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'none';
+            responseDiv.textContent = '';
+        }
+    </script>
+</body>
+</html>
